@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Evaluación Auxiliares | Integral de Empaques SAS</title>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Arial,sans-serif;background:#f0f4f8;min-height:100vh}
+.tabs{display:flex;background:#1F4E79;position:sticky;top:0;z-index:10}
+.tab{flex:1;padding:14px;color:#a8d0f0;font-size:13px;font-weight:bold;border:none;
+  background:none;cursor:pointer;border-bottom:3px solid transparent}
+.tab.on{color:#fff;border-bottom:3px solid #2E7D32}
+.pag{display:none;padding:1rem;max-width:520px;margin:0 auto}
+.pag.on{display:block}
+#pag-evaluador{display:none;padding:1rem}
+#pag-evaluador.on{display:block}
+.hdr{background:#1F4E79;border-radius:14px;padding:1.4rem;text-align:center;margin:1rem 0;color:#fff}
+.hdr .emp{font-size:12px;color:#D6E4F0;margin-bottom:4px}
+.hdr h1{font-size:19px;line-height:1.2;margin-bottom:4px}
+.hdr .sub{font-size:12px;color:#D6E4F0}
+.card{background:#fff;border-radius:12px;padding:1.2rem;margin-bottom:1rem;
+  box-shadow:0 2px 8px rgba(0,0,0,.08)}
+label{font-weight:bold;font-size:13px;color:#1F4E79;display:block;margin-bottom:6px}
+input,select{width:100%;padding:10px 12px;border:2px solid #D6E4F0;border-radius:8px;
+  font-size:14px;outline:none;margin-bottom:1rem}
+.btn{width:100%;padding:13px;border:none;border-radius:10px;font-size:15px;
+  font-weight:bold;cursor:pointer;margin-top:4px}
+.btn-v{background:#1A6B2F;color:#fff}
+.btn-v:disabled{background:#ccc;color:#888;cursor:default}
+.btn-a{background:#1F4E79;color:#fff}
+.btn-n{background:#C55A11;color:#fff}
+.btn-n:disabled{background:#ccc;color:#888;cursor:default}
+.info{background:#f4f4f4;border-radius:8px;padding:.9rem 1rem;font-size:13px;
+  color:#333;margin-bottom:1rem;line-height:1.7}
+.prog-bg{background:#ddd;border-radius:99px;height:8px;margin-bottom:1rem}
+.prog-fill{background:#1A6B2F;border-radius:99px;height:8px;transition:width .4s}
+.q-top{background:#1F4E79;border-radius:12px;padding:.8rem 1.2rem;margin-bottom:.8rem;
+  display:flex;justify-content:space-between;align-items:center;color:#fff;font-size:13px;font-weight:bold}
+.q-card{background:#fff;border-radius:12px;padding:1.2rem;margin-bottom:1rem;
+  box-shadow:0 2px 8px rgba(0,0,0,.08)}
+.q-etiq{background:#1F4E79;color:#fff;border-radius:8px;padding:.5rem .9rem;
+  font-size:12px;font-weight:bold;margin-bottom:.8rem}
+.q-txt{font-size:15px;font-weight:bold;color:#1a1a1a;line-height:1.5}
+.ops{display:flex;flex-direction:column;gap:.6rem;margin-bottom:1rem}
+.op{background:#fff;border:2px solid #ddd;border-radius:10px;padding:.9rem 1rem;
+  text-align:left;font-size:14px;color:#1a1a1a;cursor:pointer;
+  display:flex;align-items:flex-start;gap:.6rem;line-height:1.4;
+  transition:all .2s;width:100%}
+.op.sel{background:#D6E4F0;border-color:#2E75B6}
+.op.ok{background:#C8E6C9;border-color:#1A6B2F;color:#1A6B2F;font-weight:bold}
+.op.mal{background:#FDECEA;border-color:#C00000;color:#C00000}
+.letra{min-width:24px;height:24px;border-radius:50%;background:#ddd;color:#fff;
+  display:flex;align-items:center;justify-content:center;font-size:11px;
+  font-weight:bold;flex-shrink:0}
+.op.sel .letra{background:#2E75B6}
+.op.ok .letra{background:#1A6B2F}
+.op.mal .letra{background:#C00000}
+.expl{border-radius:10px;padding:1rem;margin-bottom:1rem;font-size:13px;
+  line-height:1.5;border:2px solid}
+.expl.ok{background:#C8E6C9;border-color:#1A6B2F}
+.expl.mal{background:#FDECEA;border-color:#C00000}
+.expl-tit{font-weight:bold;margin-bottom:4px;font-size:14px}
+.res-box{border-radius:14px;padding:1.5rem;text-align:center;margin:1rem 0;color:#fff}
+.det-item{display:flex;align-items:flex-start;gap:.6rem;margin-bottom:.6rem;
+  padding:.7rem;border-radius:8px;font-size:12px;line-height:1.4}
+.eval-hdr{background:#1F4E79;color:#fff;border-radius:12px;padding:1rem 1.2rem;
+  margin:1rem 0;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.5rem}
+.stats{display:flex;gap:.8rem;flex-wrap:wrap;margin-bottom:1rem}
+.stat{background:#fff;border-radius:10px;padding:.8rem 1.2rem;text-align:center;
+  box-shadow:0 2px 8px rgba(0,0,0,.07);min-width:85px}
+.stat .n{font-size:28px;font-weight:bold}
+.stat .l{font-size:11px;color:#888}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:1rem}
+.alumno{background:#fff;border-radius:12px;padding:1rem;
+  box-shadow:0 2px 8px rgba(0,0,0,.08);border-left:5px solid #ddd}
+.nom{font-weight:bold;font-size:14px;color:#1F4E79}
+.tur{font-size:11px;color:#888;margin-bottom:8px}
+.est{font-size:12px;font-weight:bold;margin-bottom:8px}
+.mini-bg{background:#eee;border-radius:99px;height:6px;margin-bottom:8px}
+.mini-fill{background:#2E75B6;border-radius:99px;height:6px;transition:width .4s}
+.puntos{display:flex;gap:4px;flex-wrap:wrap}
+.pto{width:22px;height:22px;border-radius:4px;display:flex;align-items:center;
+  justify-content:center;font-size:10px;font-weight:bold}
+.btn-rojo{background:#C00000;color:#fff;border:none;border-radius:8px;
+  padding:8px 14px;font-size:12px;font-weight:bold;cursor:pointer}
+.vacio{text-align:center;color:#aaa;padding:3rem 1rem;background:#fff;border-radius:12px}
+.conectado{background:#C8E6C9;color:#1A6B2F;border-radius:8px;padding:4px 10px;
+  font-size:11px;font-weight:bold;display:inline-block;margin-bottom:8px}
+.desconectado{background:#FDECEA;color:#C00000;border-radius:8px;padding:4px 10px;
+  font-size:11px;font-weight:bold;display:inline-block;margin-bottom:8px}
+</style>
+</head>
+<body>
+
+<div class="tabs">
+  <button class="tab on" onclick="irTab('alumno')">📝 EVALUACIÓN PERSONAL</button>
+  <button class="tab" onclick="irTab('evaluador')">📊 PANEL EVALUADOR</button>
+</div>
+
+<!-- INICIO -->
+<div id="pag-inicio" class="pag on">
+  <div class="hdr">
+    <div class="emp">INTEGRAL DE EMPAQUES SAS</div>
+    <h1>EVALUACIÓN DE ENTRENAMIENTO</h1>
+    <div class="sub">Auxiliares y Patinadores — Área de Impresión Flexográfica</div>
+  </div>
+  <div class="card">
+    <div id="estado-conexion" class="desconectado">⏳ Conectando...</div>
+    <label>Tu nombre completo</label>
+    <input id="inp-nom" placeholder="Escribe tu nombre..." oninput="chkInicio()">
+    <label>Turno</label>
+    <select id="inp-tur" onchange="chkInicio()">
+      <option value="">Selecciona tu turno...</option>
+      <option>Turno Día</option>
+      <option>Turno Noche</option>
+    </select>
+    <div class="info">
+      <b>ℹ️ Instrucciones:</b><br>
+      • 8 preguntas de selección múltiple<br>
+      • Mínimo <b>6 correctas</b> para aprobar<br>
+      • Lee cada pregunta con cuidado antes de responder
+    </div>
+    <button class="btn btn-v" id="btn-ini" onclick="iniciar()" disabled>INICIAR EVALUACIÓN →</button>
+  </div>
+</div>
+
+<!-- QUIZ -->
+<div id="pag-quiz" class="pag">
+  <div class="q-top">
+    <span id="lbl-prog">Pregunta 1 / 8</span>
+    <span id="lbl-nom" style="font-size:12px;font-weight:normal;color:#D6E4F0"></span>
+  </div>
+  <div class="prog-bg"><div class="prog-fill" id="barra" style="width:0%"></div></div>
+  <div class="q-card">
+    <div class="q-etiq" id="q-etiq">PREGUNTA 1</div>
+    <p class="q-txt" id="q-txt"></p>
+  </div>
+  <div class="ops" id="ops"></div>
+  <div class="expl" id="expl" style="display:none"></div>
+  <button class="btn btn-n" id="btn-conf" onclick="confirmar()" disabled>CONFIRMAR RESPUESTA</button>
+  <button class="btn btn-a" id="btn-sig" onclick="siguiente()" style="display:none">SIGUIENTE PREGUNTA →</button>
+</div>
+
+<!-- RESULTADO -->
+<div id="pag-res" class="pag">
+  <div class="res-box" id="res-box">
+    <div style="font-size:48px;margin-bottom:8px" id="res-ico">🎉</div>
+    <div style="font-size:22px;font-weight:bold;margin-bottom:4px" id="res-est"></div>
+    <div style="font-size:36px;font-weight:bold;margin-bottom:4px" id="res-pts"></div>
+    <div style="font-size:13px;opacity:.9" id="res-msg"></div>
+  </div>
+  <div class="card">
+    <div style="font-weight:bold;color:#1F4E79;margin-bottom:.8rem">📋 Detalle de respuestas</div>
+    <div id="det"></div>
+  </div>
+  <div class="card" id="info-fin" style="font-size:12px;color:#555;line-height:1.8"></div>
+  <button class="btn btn-a" onclick="reiniciar()">NUEVA EVALUACIÓN</button>
+</div>
+
+<!-- EVALUADOR -->
+<div id="pag-evaluador">
+  <div class="eval-hdr">
+    <div>
+      <div style="font-weight:bold;font-size:16px">📊 Panel del Evaluador</div>
+      <div style="font-size:12px;color:#D6E4F0">Integral de Empaques SAS — Impresión Flexográfica</div>
+      <div style="font-size:11px;color:#a8d0f0;margin-top:2px">🔴 En vivo — actualización automática</div>
+    </div>
+    <button class="btn-rojo" onclick="limpiarTodo()">🗑 Limpiar todo</button>
+  </div>
+  <div class="stats" id="stats">
+    <div class="stat"><div class="n" style="color:#2E75B6">0</div><div class="l">Total</div></div>
+  </div>
+  <div id="grid-ev">
+    <div class="vacio">
+      <div style="font-size:40px;margin-bottom:8px">⏳</div>
+      <div style="font-size:14px">Esperando evaluaciones...</div>
+      <div style="font-size:12px;margin-top:6px">Comparte este enlace con los auxiliares.<br>Aparecerán aquí cuando inicien.</div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── FIREBASE CONFIG ──────────────────────────────────────────────────────────
+const firebaseConfig = {
+  databaseURL: "https://evaluacion-impresion-default-rtdb.firebaseio.com"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+const refAlumnos = db.ref("evaluaciones");
+
+// Estado de conexión
+db.ref(".info/connected").on("value", snap => {
+  const el = document.getElementById("estado-conexion");
+  if (snap.val()) {
+    el.className = "conectado"; el.textContent = "✅ Conectado en tiempo real";
+  } else {
+    el.className = "desconectado"; el.textContent = "❌ Sin conexión";
+  }
+});
+
+// ── PREGUNTAS ────────────────────────────────────────────────────────────────
+const PQ = [
+  {t:"El sustrato (rollo de material) de la máquina está a punto de agotarse. ¿Cuándo debes traer el nuevo rollo?",
+   o:["Cuando el operario te llame porque ya se acabó.","Antes de que se agote, anticipándote al momento en que la máquina lo va a necesitar.","Al inicio del siguiente turno.","Cuando el Jefe de Área te lo indique."],c:1,
+   e:"La clave es ANTICIPARSE. Cuando la máquina ya paró porque se acabó el material, ya perdiste tiempo productivo. Tu función es evitar esa parada."},
+  {t:"Terminas una referencia y debes devolver la tinta al almacén. ¿Cómo la debes entregar?",
+   o:["Como está, para que el almacenista la revise.","En cualquier envase disponible que encuentres en el área.","Tapada y etiquetada con la referencia, el estado (usada/limpia/contaminada) y el turno.","Mezclada con los restos de otras tintas del mismo color."],c:2,
+   e:"El protocolo es: TAPADA + ETIQUETADA (referencia, estado, turno). Una tinta sin identificar puede arruinar el color de la siguiente referencia."},
+  {t:"Estás retirando sacos impresos y notas que varios tienen manchas evidentes. ¿Qué haces?",
+   o:["Los mezclas con los sacos buenos para que no se note.","Los guardas aparte y no dices nada para no interrumpir al operario.","Avisas de inmediato al operario y separas el material defectuoso del conforme.","Esperas a que se acumule más material defectuoso antes de reportar."],c:2,
+   e:"Cuando ves un defecto, avisas de inmediato y separas el material. Cada saco defectuoso no detectado a tiempo es producto que no se puede vender."},
+  {t:"El operario está ajustando la máquina. Tú crees saber qué botón podría ayudar. ¿Lo tocas?",
+   o:["Sí, si crees que sabes qué hace.","Sí, si el operario está distraído.","No. Los controles de la máquina solo los maneja el operario.","Sí, pero solo botones que no sean rojos."],c:2,
+   e:"NUNCA. Los controles son exclusivos del operario. Una intervención no autorizada puede causar daño, accidente o producto defectuoso."},
+  {t:"¿En qué momento del turno debes limpiar el área alrededor de la máquina?",
+   o:["Solo al cierre del turno, cuando ya no hay producción.","Solo si el Jefe de Área te lo pide.","Al inicio, durante y al cierre del turno.","Una vez por semana durante el mantenimiento."],c:2,
+   e:"El orden y la limpieza son continuos: al inicio verificas, durante el turno mantienes, y al cierre dejas todo listo para el turno entrante."},
+  {t:"Hay un cambio de referencia. ¿Cuál es el orden correcto de tus acciones?",
+   o:["Trae las nuevas tintas → retira el material anterior → limpia el área → confirma con el operario.","Retira el material anterior → trae las nuevas tintas → limpia el área → confirma con el operario.","Espera a que el operario cambie el cyrel, luego actúas.","Solo te encargas de las tintas, lo demás no es tu función."],c:1,
+   e:"RETIRA primero (despeja el espacio) → TRAE nuevas tintas → LIMPIA el área → CONFIRMA con el operario. Así el cambio es rápido y ordenado."},
+  {t:"Al final del turno, ¿cuál es tu responsabilidad con el área?",
+   o:["Solo asegurarte de que las máquinas estén apagadas.","Dejar todas las tintas tapadas y devueltas al almacén, y el área limpia para el turno entrante.","Esperar a que el operario termine primero y luego salir.","Solo si tu jefe te lo pide explícitamente."],c:1,
+   e:"Al cierre debes: devolver tintas correctamente, llevar cyreles al almacén y dejar el área limpia para el turno entrante."},
+  {t:"Detectas que al almacén le queda muy poca tinta de un color que se usará pronto. ¿Qué haces?",
+   o:["No dices nada y esperas que alguien más lo note.","Usas una tinta similar de otra referencia para reemplazarla.","Avisas al Jefe de Área del faltante para gestionar el reabastecimiento a tiempo.","Esperas hasta que se acabe completamente."],c:2,
+   e:"La anticipación es tu principal aporte. Reportar un faltante antes de que cause una parada distingue a un buen auxiliar."}
+];
+
+const LETRAS = ['A','B','C','D'];
+let E = {nom:'',tur:'',act:0,sel:null,conf:false,resp:[],ini:null,uid:null,pantalla:'inicio'};
+let tabActiva = 'alumno';
+
+function genId(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6)}
+
+// ── TABS ─────────────────────────────────────────────────────────────────────
+function irTab(t){
+  tabActiva = t;
+  document.querySelectorAll('.tab').forEach((b,i)=>
+    b.classList.toggle('on',(i===0&&t==='alumno')||(i===1&&t==='evaluador')));
+  document.querySelectorAll('.pag').forEach(p=>p.classList.remove('on'));
+  document.getElementById('pag-evaluador').classList.remove('on');
+  if(t==='alumno'){
+    document.getElementById('pag-'+E.pantalla).classList.add('on');
+  } else {
+    document.getElementById('pag-evaluador').classList.add('on');
+  }
+}
+
+// ── INICIO ────────────────────────────────────────────────────────────────────
+function chkInicio(){
+  document.getElementById('btn-ini').disabled =
+    !(document.getElementById('inp-nom').value.trim() &&
+      document.getElementById('inp-tur').value);
+}
+
+function iniciar(){
+  E.nom = document.getElementById('inp-nom').value.trim();
+  E.tur = document.getElementById('inp-tur').value;
+  E.act = 0; E.sel = null; E.conf = false; E.resp = [];
+  E.ini = new Date().toISOString();
+  E.uid = genId();
+  guardar({estado:'en-curso', preguntaActual:0, respuestas:[], correctas:0, fin:null});
+  mostrarPag('quiz');
+  renderPregunta();
+}
+
+function guardar(extra){
+  refAlumnos.child(E.uid).set({
+    id:E.uid, nombre:E.nom, turno:E.tur,
+    inicio:E.ini, ...extra
+  });
+}
+
+function mostrarPag(p){
+  E.pantalla = p;
+  document.querySelectorAll('.pag').forEach(x=>x.classList.remove('on'));
+  document.getElementById('pag-'+p).classList.add('on');
+}
+
+// ── PREGUNTA ──────────────────────────────────────────────────────────────────
+function renderPregunta(){
+  const p = PQ[E.act];
+  document.getElementById('lbl-prog').textContent = `Pregunta ${E.act+1} / ${PQ.length}`;
+  document.getElementById('lbl-nom').textContent = E.nom;
+  document.getElementById('barra').style.width = Math.round((E.act/PQ.length)*100)+'%';
+  document.getElementById('q-etiq').textContent = `PREGUNTA ${E.act+1}`;
+  document.getElementById('q-txt').textContent = p.t;
+  document.getElementById('expl').style.display = 'none';
+  document.getElementById('btn-conf').style.display = 'block';
+  document.getElementById('btn-conf').disabled = true;
+  document.getElementById('btn-sig').style.display = 'none';
+  const ops = document.getElementById('ops');
+  ops.innerHTML = '';
+  p.o.forEach((op,i)=>{
+    const b = document.createElement('button');
+    b.className = 'op'; b.dataset.i = i;
+    b.innerHTML = `<span class="letra">${LETRAS[i]}</span>${op}`;
+    b.onclick = ()=>seleccionar(i);
+    ops.appendChild(b);
+  });
+}
+
+function seleccionar(i){
+  if(E.conf) return;
+  E.sel = i;
+  document.querySelectorAll('.op').forEach((b,j)=>b.classList.toggle('sel',j===i));
+  document.getElementById('btn-conf').disabled = false;
+}
+
+function confirmar(){
+  if(E.sel===null) return;
+  E.conf = true;
+  const p = PQ[E.act];
+  const ok = E.sel === p.c;
+  E.resp.push({seleccion:E.sel, correcta:ok});
+  document.querySelectorAll('.op').forEach((b,i)=>{
+    b.classList.remove('sel');
+    if(i===p.c) b.classList.add('ok');
+    else if(i===E.sel) b.classList.add('mal');
+  });
+  const ex = document.getElementById('expl');
+  ex.className = 'expl '+(ok?'ok':'mal');
+  ex.style.display = 'block';
+  ex.innerHTML = `<div class="expl-tit">${ok?'✓ ¡Correcto!':'✗ Incorrecto'}</div>${p.e}`;
+  document.getElementById('btn-conf').style.display = 'none';
+  const bs = document.getElementById('btn-sig');
+  bs.style.display = 'block';
+  bs.textContent = E.act < PQ.length-1 ? 'SIGUIENTE PREGUNTA →' : 'VER RESULTADO →';
+  // Guardar progreso en Firebase
+  const correctas = E.resp.filter(r=>r.correcta).length;
+  guardar({estado:'en-curso', preguntaActual:E.act,
+    respuestas:E.resp, correctas, fin:null});
+}
+
+function siguiente(){
+  if(E.act < PQ.length-1){
+    E.act++; E.sel = null; E.conf = false;
+    renderPregunta();
+  } else {
+    terminar();
+  }
+}
+
+function terminar(){
+  const correctas = E.resp.filter(r=>r.correcta).length;
+  const aprobado = correctas >= 6;
+  const fin = new Date().toISOString();
+  guardar({estado: aprobado?'aprobado':'reprobado',
+    preguntaActual:PQ.length, respuestas:E.resp, correctas, fin});
+  // Render resultado
+  document.getElementById('res-ico').textContent = aprobado?'🎉':'📚';
+  document.getElementById('res-est').textContent = aprobado?'¡APROBADO!':'NO APROBADO';
+  document.getElementById('res-pts').textContent = `${correctas} / ${PQ.length}`;
+  document.getElementById('res-msg').textContent = aprobado
+    ?'Excelente. Conoces bien tus funciones y deberes.'
+    :'Necesitas repasar el material. Mínimo 6 correctas para aprobar.';
+  document.getElementById('res-box').style.background = aprobado?'#1A6B2F':'#C00000';
+  const det = document.getElementById('det');
+  det.innerHTML = '';
+  E.resp.forEach((r,i)=>{
+    const d = document.createElement('div');
+    d.className = 'det-item';
+    d.style.background = r.correcta?'#C8E6C9':'#FDECEA';
+    d.innerHTML = `<span style="font-size:16px">${r.correcta?'✓':'✗'}</span>
+      <div><b>P${i+1}:</b> ${PQ[i].o[r.seleccion]}</div>`;
+    det.appendChild(d);
+  });
+  const dur = Math.round((new Date(fin)-new Date(E.ini))/60000);
+  document.getElementById('info-fin').innerHTML =
+    `<b>Nombre:</b> ${E.nom} &nbsp;|&nbsp; <b>Turno:</b> ${E.tur}<br>
+     <b>Fecha:</b> ${new Date(fin).toLocaleString('es-CO')}<br>
+     <b>Duración:</b> ${dur} min &nbsp;|&nbsp;
+     <b>Resultado:</b> ${correctas}/${PQ.length} — ${aprobado?'APROBADO':'NO APROBADO'}`;
+  mostrarPag('res');
+}
+
+function reiniciar(){
+  E = {nom:'',tur:'',act:0,sel:null,conf:false,resp:[],ini:null,uid:null,pantalla:'inicio'};
+  document.getElementById('inp-nom').value = '';
+  document.getElementById('inp-tur').value = '';
+  document.getElementById('btn-ini').disabled = true;
+  mostrarPag('inicio');
+}
+
+// ── PANEL EVALUADOR — escucha Firebase en tiempo real ─────────────────────────
+refAlumnos.on('value', snap => {
+  const datos = snap.val() || {};
+  const alumnos = Object.values(datos);
+  const enCurso = alumnos.filter(a=>a.estado==='en-curso').length;
+  const aprobados = alumnos.filter(a=>a.estado==='aprobado').length;
+  const reprobados = alumnos.filter(a=>a.estado==='reprobado').length;
+
+  document.getElementById('stats').innerHTML =
+    stat(alumnos.length,'Total','#2E75B6') +
+    stat(enCurso,'En curso','#C55A11') +
+    stat(aprobados,'Aprobados','#1A6B2F') +
+    stat(reprobados,'No aprobados','#C00000');
+
+  const grid = document.getElementById('grid-ev');
+  if(!alumnos.length){
+    grid.innerHTML = `<div class="vacio">
+      <div style="font-size:40px;margin-bottom:8px">⏳</div>
+      <div style="font-size:14px;font-weight:bold">Esperando evaluaciones...</div>
+      <div style="font-size:12px;margin-top:6px">
+        Comparte el archivo con los auxiliares.<br>
+        Aparecerán aquí cuando inicien desde cualquier celular.
+      </div></div>`;
+    return;
+  }
+
+  grid.innerHTML = '<div class="grid">' + alumnos.map(a=>{
+    const bc = {['en-curso']:'#C55A11',aprobado:'#1A6B2F',reprobado:'#C00000'}[a.estado]||'#ddd';
+    const et = {
+      ['en-curso']: `▶ En curso — P${(a.preguntaActual||0)+1}/${PQ.length}`,
+      aprobado: `✅ APROBADO — ${a.correctas}/${PQ.length}`,
+      reprobado: `❌ NO APROBADO — ${a.correctas}/${PQ.length}`
+    }[a.estado]||'';
+    const pct = Math.round(((a.preguntaActual||0)/PQ.length)*100);
+    const puntos = PQ.map((_,i)=>{
+      if(!a.respuestas||i>=a.respuestas.length)
+        return `<div class="pto" style="background:#eee;color:#aaa">${i+1}</div>`;
+      return a.respuestas[i].correcta
+        ?`<div class="pto" style="background:#C8E6C9;color:#1A6B2F">✓</div>`
+        :`<div class="pto" style="background:#FDECEA;color:#C00000">✗</div>`;
+    }).join('');
+    const dur = a.fin
+      ?`<div style="font-size:11px;color:#888;margin-top:6px">
+          Duración: ${Math.round((new Date(a.fin)-new Date(a.inicio))/60000)} min</div>`:'';
+    return `<div class="alumno" style="border-left-color:${bc}">
+      <div class="nom">${a.nombre}</div>
+      <div class="tur">Turno ${a.turno}</div>
+      <div class="est" style="color:${bc}">${et}</div>
+      <div class="mini-bg"><div class="mini-fill" style="width:${pct}%"></div></div>
+      <div class="puntos">${puntos}</div>${dur}</div>`;
+  }).join('') + '</div>';
+});
+
+function stat(n,l,c){
+  return `<div class="stat"><div class="n" style="color:${c}">${n}</div><div class="l">${l}</div></div>`;
+}
+
+function limpiarTodo(){
+  if(!confirm('¿Limpiar todos los resultados?')) return;
+  refAlumnos.remove();
+}
+</script>
+</body>
+</html>

@@ -91,13 +91,38 @@ input,select{width:100%;padding:10px 12px;border:2px solid #D6E4F0;border-radius
   font-size:11px;font-weight:bold;display:inline-block;margin-bottom:8px}
 .desconectado{background:#FDECEA;color:#C00000;border-radius:8px;padding:4px 10px;
   font-size:11px;font-weight:bold;display:inline-block;margin-bottom:8px}
+textarea{width:100%;padding:10px 12px;border:2px solid #D6E4F0;border-radius:8px;
+  font-size:14px;outline:none;margin-bottom:1rem;font-family:Arial,sans-serif;resize:vertical}
+.contador-preg{background:#1F4E79;color:#fff;border-radius:8px;padding:.7rem 1rem;
+  font-size:13px;font-weight:bold;margin-bottom:1rem;text-align:center}
+.contador-preg.listo{background:#1A6B2F}
+.preg-item{background:#fff;border-radius:10px;padding:.8rem 1rem;margin-bottom:.6rem;
+  box-shadow:0 2px 8px rgba(0,0,0,.06);display:flex;justify-content:space-between;
+  align-items:flex-start;gap:.6rem}
+.preg-item .txt{font-size:13px;line-height:1.4}
+.preg-item .txt b{color:#1F4E79}
+.btn-del{background:#FDECEA;color:#C00000;border:none;border-radius:6px;
+  padding:6px 10px;font-size:11px;font-weight:bold;cursor:pointer;flex-shrink:0}
+.btn-sec{background:#fff;color:#1F4E79;border:2px solid #1F4E79}
+.op-letra{display:flex;align-items:center;gap:8px;margin-bottom:.6rem}
+.op-letra .letra{position:static}
+.op-letra input{margin-bottom:0;flex:1}
+.banco-estado{font-size:12px;color:#555;margin-bottom:1rem;line-height:1.6}
+.lista-conectados{background:#C8E6C9;border-radius:12px;padding:1rem;margin-bottom:1rem;
+  border-left:5px solid #1A6B2F}
+.lista-conectados h3{color:#1A6B2F;font-size:13px;margin-bottom:8px}
+.conectado-item{background:#fff;border-radius:8px;padding:8px 12px;margin-bottom:6px;
+  font-size:12px;font-weight:bold;color:#1A6B2F;display:flex;align-items:center;gap:6px}
+.punto-verde{width:8px;height:8px;background:#1A6B2F;border-radius:50%;animation:pulse 1.5s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
 </style>
 </head>
 <body>
 
 <div class="tabs">
-  <button class="tab on" onclick="irTab('alumno')">📝 EVALUACIÓN PERSONAL</button>
-  <button class="tab" onclick="irTab('evaluador')">📊 PANEL EVALUADOR</button>
+  <button class="tab on" onclick="irTab('alumno')">📝 EVALUACIÓN</button>
+  <button class="tab" onclick="irTab('evaluador')">📊 PANEL</button>
+  <button class="tab" onclick="irTab('preguntas')">✏️ PREGUNTAS</button>
 </div>
 
 <!-- INICIO -->
@@ -119,8 +144,8 @@ input,select{width:100%;padding:10px 12px;border:2px solid #D6E4F0;border-radius
     </select>
     <div class="info">
       <b>ℹ️ Instrucciones:</b><br>
-      • 8 preguntas de selección múltiple<br>
-      • Mínimo <b>6 correctas</b> para aprobar<br>
+      • <span id="lbl-num-preg">8</span> preguntas de selección múltiple<br>
+      • Mínimo <b id="lbl-min-correctas">6</b> correctas para aprobar<br>
       • Lee cada pregunta con cuidado antes de responder
     </div>
     <button class="btn btn-v" id="btn-ini" onclick="iniciar()" disabled>INICIAR EVALUACIÓN →</button>
@@ -170,15 +195,74 @@ input,select{width:100%;padding:10px 12px;border:2px solid #D6E4F0;border-radius
     </div>
     <button class="btn-rojo" onclick="limpiarTodo()">🗑 Limpiar todo</button>
   </div>
+
+  <!-- LISTA DE CONECTADOS -->
+  <div id="seccion-conectados" style="display:none">
+    <div class="lista-conectados">
+      <h3>👥 Conectados ahora (<span id="cnt-conectados">0</span>)</h3>
+      <div id="lista-conectados"></div>
+    </div>
+  </div>
+
   <div class="stats" id="stats">
     <div class="stat"><div class="n" style="color:#2E75B6">0</div><div class="l">Total</div></div>
   </div>
   <div id="grid-ev">
     <div class="vacio">
       <div style="font-size:40px;margin-bottom:8px">⏳</div>
-      <div style="font-size:14px">Esperando evaluaciones...</div>
-      <div style="font-size:12px;margin-top:6px">Comparte este enlace con los auxiliares.<br>Aparecerán aquí cuando inicien.</div>
-    </div>
+      <div style="font-size:14px;font-weight:bold">Esperando evaluaciones...</div>
+      <div style="font-size:12px;margin-top:6px">
+        Comparte este enlace con los auxiliares.<br>
+        Aparecerán aquí cuando inicien desde cualquier celular.
+      </div></div>
+  </div>
+</div>
+
+<!-- BANCO DE PREGUNTAS (EVALUADOR) -->
+<div id="pag-preguntas" style="display:none;padding:1rem">
+  <div class="hdr">
+    <div class="emp">INTEGRAL DE EMPAQUES SAS</div>
+    <h1>✏️ BANCO DE PREGUNTAS</h1>
+    <div class="sub">Crea las preguntas que verán los auxiliares al evaluarse</div>
+  </div>
+
+  <div class="banco-estado" id="banco-estado">Cargando estado actual...</div>
+  <div class="contador-preg" id="contador-preg">0 / 60 preguntas (mínimo 10 para activar)</div>
+
+  <div class="card">
+    <div style="font-weight:bold;color:#1F4E79;margin-bottom:.8rem">➕ Agregar pregunta</div>
+    <label>Texto de la pregunta</label>
+    <textarea id="inp-preg-texto" rows="3" placeholder="Escribe la pregunta..."></textarea>
+
+    <label>Opciones de respuesta</label>
+    <div class="op-letra"><span class="letra" style="background:#1F4E79">A</span>
+      <input id="inp-op-a" placeholder="Opción A"></div>
+    <div class="op-letra"><span class="letra" style="background:#1F4E79">B</span>
+      <input id="inp-op-b" placeholder="Opción B"></div>
+    <div class="op-letra"><span class="letra" style="background:#1F4E79">C</span>
+      <input id="inp-op-c" placeholder="Opción C"></div>
+    <div class="op-letra"><span class="letra" style="background:#1F4E79">D</span>
+      <input id="inp-op-d" placeholder="Opción D"></div>
+
+    <label>¿Cuál opción es la correcta?</label>
+    <select id="sel-preg-correcta">
+      <option value="0">A</option>
+      <option value="1">B</option>
+      <option value="2">C</option>
+      <option value="3">D</option>
+    </select>
+
+    <label>Explicación (se muestra al responder)</label>
+    <textarea id="inp-preg-expl" rows="2" placeholder="Por qué es correcta esa respuesta..."></textarea>
+
+    <button class="btn btn-a" onclick="agregarPregunta()">➕ AGREGAR PREGUNTA AL BANCO</button>
+  </div>
+
+  <div id="lista-preguntas"></div>
+
+  <div class="card">
+    <button class="btn btn-v" id="btn-guardar-banco" onclick="guardarBanco()" disabled>💾 GUARDAR Y ACTIVAR BANCO</button>
+    <button class="btn btn-sec" onclick="restaurarPorDefecto()">↩️ Volver a las 8 preguntas originales</button>
   </div>
 </div>
 
@@ -190,19 +274,23 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 const refAlumnos = db.ref("evaluaciones");
+const refPreguntas = db.ref("preguntas");
+const refConectados = db.ref("conectados");
 
 // Estado de conexión
 db.ref(".info/connected").on("value", snap => {
   const el = document.getElementById("estado-conexion");
   if (snap.val()) {
-    el.className = "conectado"; el.textContent = "✅ Conectado en tiempo real";
+    el.className = "conectado"; 
+    el.textContent = "✅ Conectado en tiempo real";
   } else {
-    el.className = "desconectado"; el.textContent = "❌ Sin conexión";
+    el.className = "desconectado"; 
+    el.textContent = "❌ Sin conexión";
   }
 });
 
 // ── PREGUNTAS ────────────────────────────────────────────────────────────────
-const PQ = [
+const PQ_DEFECTO = [
   {t:"El sustrato (rollo de material) de la máquina está a punto de agotarse. ¿Cuándo debes traer el nuevo rollo?",
    o:["Cuando el operario te llame porque ya se acabó.","Antes de que se agote, anticipándote al momento en que la máquina lo va a necesitar.","Al inicio del siguiente turno.","Cuando el Jefe de Área te lo indique."],c:1,
    e:"La clave es ANTICIPARSE. Cuando la máquina ya paró porque se acabó el material, ya perdiste tiempo productivo. Tu función es evitar esa parada."},
@@ -229,23 +317,205 @@ const PQ = [
    e:"La anticipación es tu principal aporte. Reportar un faltante antes de que cause una parada distingue a un buen auxiliar."}
 ];
 
+let PQ = PQ_DEFECTO;
+let UMBRAL = 6;
+let bancoDraft = [];
+
 const LETRAS = ['A','B','C','D'];
-let E = {nom:'',tur:'',act:0,sel:null,conf:false,resp:[],ini:null,uid:null,pantalla:'inicio'};
+let E = {nom:'',tur:'',act:0,sel:null,conf:false,resp:[],ini:null,uid:null,pantalla:'inicio',sessionId:null};
 let tabActiva = 'alumno';
 
-function genId(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6)}
+// ── GENERAR SESSION ID ÚNICO ──────────────────────────────────────────────────
+function genId(){
+  return Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+}
+
+// ── SINCRONIZAR BANCO ACTIVO EN TIEMPO REAL ───────────────────────────────────
+function actualizarInfoPreguntas(){
+  UMBRAL = Math.ceil(PQ.length*0.75);
+  const lblN = document.getElementById('lbl-num-preg');
+  const lblM = document.getElementById('lbl-min-correctas');
+  if(lblN) lblN.textContent = PQ.length;
+  if(lblM) lblM.textContent = UMBRAL;
+}
+
+refPreguntas.on('value', snap=>{
+  const data = snap.val();
+  const custom = (data && Array.isArray(data.preguntas) && data.preguntas.length>=10)
+    ? data.preguntas : null;
+  if(E.pantalla !== 'quiz'){
+    PQ = custom || PQ_DEFECTO;
+    actualizarInfoPreguntas();
+  }
+  const est = document.getElementById('banco-estado');
+  if(est){
+    est.innerHTML = custom
+      ? `✅ Banco personalizado <b>activo</b>: ${custom.length} preguntas.`
+      : `ℹ️ Usando las <b>8 preguntas originales</b> (aún no hay banco personalizado guardado).`;
+  }
+});
+
+// ── SISTEMA DE PRESENCIA EN TIEMPO REAL ────────────────────────────────────────
+function registrarPresencia(){
+  if(!E.sessionId) return;
+  
+  const refSesion = refConectados.child(E.sessionId);
+  
+  // Registrar presencia inicial
+  refSesion.set({
+    nombre: E.nom,
+    turno: E.tur,
+    timestamp: firebase.database.ServerValue.TIMESTAMP,
+    estado: 'en-formulario'
+  });
+  
+  // Heartbeat cada 5 segundos
+  const beatInterval = setInterval(()=>{
+    if(E.pantalla === 'inicio'){
+      refSesion.update({timestamp: firebase.database.ServerValue.TIMESTAMP});
+    } else {
+      // Si ya inició evaluación, mantener registro pero cambiar estado
+      refSesion.update({
+        estado: 'evaluando',
+        timestamp: firebase.database.ServerValue.TIMESTAMP
+      });
+    }
+  }, 5000);
+  
+  // Limpiar al salir
+  window.addEventListener('beforeunload', ()=>{
+    refSesion.remove();
+    clearInterval(beatInterval);
+  });
+}
+
+// ── ESCUCHAR CAMBIOS EN CONECTADOS ─────────────────────────────────────────────
+refConectados.on('value', snap=>{
+  const conectados = snap.val() || {};
+  const ahora = Date.now();
+  const TIMEOUT = 15000; // 15 segundos sin latido = desconectado
+  
+  const activos = Object.entries(conectados)
+    .filter(([_, data])=> data && (ahora - data.timestamp) < TIMEOUT)
+    .map(([id, data])=>({id, ...data}));
+  
+  // Limpiar desconectados
+  Object.entries(conectados).forEach(([id, data])=>{
+    if(data && (ahora - data.timestamp) >= TIMEOUT){
+      refConectados.child(id).remove();
+    }
+  });
+  
+  // Mostrar lista de conectados en Panel
+  if(tabActiva === 'evaluador' && activos.length > 0){
+    const seccion = document.getElementById('seccion-conectados');
+    seccion.style.display = 'block';
+    document.getElementById('cnt-conectados').textContent = activos.length;
+    
+    const lista = document.getElementById('lista-conectados');
+    lista.innerHTML = activos.map(a=>`
+      <div class="conectado-item">
+        <span class="punto-verde"></span>
+        <span>${a.nombre} <span style="opacity:0.7">(${a.turno})</span></span>
+      </div>
+    `).join('');
+  }
+});
+
+// ── EDITOR DEL BANCO DE PREGUNTAS (EVALUADOR) ─────────────────────────────────
+function cargarBancoDraft(){
+  refPreguntas.once('value').then(snap=>{
+    const data = snap.val();
+    bancoDraft = (data && Array.isArray(data.preguntas)) ? data.preguntas.slice() : [];
+    renderBanco();
+  });
+}
+
+function limpiarFormPregunta(){
+  document.getElementById('inp-preg-texto').value = '';
+  document.getElementById('inp-op-a').value = '';
+  document.getElementById('inp-op-b').value = '';
+  document.getElementById('inp-op-c').value = '';
+  document.getElementById('inp-op-d').value = '';
+  document.getElementById('inp-preg-expl').value = '';
+  document.getElementById('sel-preg-correcta').value = '0';
+}
+
+function agregarPregunta(){
+  const t = document.getElementById('inp-preg-texto').value.trim();
+  const a = document.getElementById('inp-op-a').value.trim();
+  const b = document.getElementById('inp-op-b').value.trim();
+  const c = document.getElementById('inp-op-c').value.trim();
+  const d = document.getElementById('inp-op-d').value.trim();
+  const e = document.getElementById('inp-preg-expl').value.trim();
+  const correcta = parseInt(document.getElementById('sel-preg-correcta').value);
+  if(!t || !a || !b || !c || !d){
+    alert('Completa el texto de la pregunta y las 4 opciones.');
+    return;
+  }
+  if(bancoDraft.length >= 60){
+    alert('Ya tienes el máximo de 60 preguntas.');
+    return;
+  }
+  bancoDraft.push({t, o:[a,b,c,d], c:correcta, e: e || 'Respuesta correcta según el protocolo del área.'});
+  limpiarFormPregunta();
+  renderBanco();
+}
+
+function eliminarPregunta(i){
+  bancoDraft.splice(i,1);
+  renderBanco();
+}
+
+function renderBanco(){
+  const contador = document.getElementById('contador-preg');
+  contador.textContent = `${bancoDraft.length} / 60 preguntas (mínimo 10 para activar)`;
+  contador.classList.toggle('listo', bancoDraft.length>=10);
+
+  const lista = document.getElementById('lista-preguntas');
+  lista.innerHTML = bancoDraft.map((p,i)=>`
+    <div class="preg-item">
+      <div class="txt"><b>${i+1}.</b> ${p.t}<br>
+        <span style="color:#1A6B2F">✓ ${LETRAS[p.c]}: ${p.o[p.c]}</span></div>
+      <button class="btn-del" onclick="eliminarPregunta(${i})">🗑</button>
+    </div>`).join('') || '<div class="vacio">Aún no has agregado preguntas.</div>';
+
+  document.getElementById('btn-guardar-banco').disabled = bancoDraft.length < 10;
+}
+
+function guardarBanco(){
+  if(bancoDraft.length < 10 || bancoDraft.length > 60){
+    alert('El banco debe tener entre 10 y 60 preguntas.');
+    return;
+  }
+  refPreguntas.set({preguntas: bancoDraft, actualizado: new Date().toISOString()})
+    .then(()=> alert(`✅ Banco guardado y activado con ${bancoDraft.length} preguntas.\nLos auxiliares ya verán estas preguntas al evaluarse.`));
+}
+
+function restaurarPorDefecto(){
+  if(!confirm('¿Volver a las 8 preguntas originales? Se eliminará el banco personalizado guardado.')) return;
+  refPreguntas.remove().then(()=>{
+    bancoDraft = [];
+    renderBanco();
+    alert('Preguntas por defecto restauradas.');
+  });
+}
 
 // ── TABS ─────────────────────────────────────────────────────────────────────
 function irTab(t){
   tabActiva = t;
   document.querySelectorAll('.tab').forEach((b,i)=>
-    b.classList.toggle('on',(i===0&&t==='alumno')||(i===1&&t==='evaluador')));
+    b.classList.toggle('on',(i===0&&t==='alumno')||(i===1&&t==='evaluador')||(i===2&&t==='preguntas')));
   document.querySelectorAll('.pag').forEach(p=>p.classList.remove('on'));
   document.getElementById('pag-evaluador').classList.remove('on');
+  document.getElementById('pag-preguntas').style.display = 'none';
   if(t==='alumno'){
     document.getElementById('pag-'+E.pantalla).classList.add('on');
-  } else {
+  } else if(t==='evaluador'){
     document.getElementById('pag-evaluador').classList.add('on');
+  } else if(t==='preguntas'){
+    document.getElementById('pag-preguntas').style.display = 'block';
+    cargarBancoDraft();
   }
 }
 
@@ -259,10 +529,20 @@ function chkInicio(){
 function iniciar(){
   E.nom = document.getElementById('inp-nom').value.trim();
   E.tur = document.getElementById('inp-tur').value;
+  E.sessionId = genId();
   E.act = 0; E.sel = null; E.conf = false; E.resp = [];
   E.ini = new Date().toISOString();
   E.uid = genId();
+  
+  // Registrar en evaluaciones
   guardar({estado:'en-curso', preguntaActual:0, respuestas:[], correctas:0, fin:null});
+  
+  // Actualizar presencia
+  refConectados.child(E.sessionId).update({
+    estado: 'evaluando',
+    timestamp: firebase.database.ServerValue.TIMESTAMP
+  });
+  
   mostrarPag('quiz');
   renderPregunta();
 }
@@ -329,7 +609,6 @@ function confirmar(){
   const bs = document.getElementById('btn-sig');
   bs.style.display = 'block';
   bs.textContent = E.act < PQ.length-1 ? 'SIGUIENTE PREGUNTA →' : 'VER RESULTADO →';
-  // Guardar progreso en Firebase
   const correctas = E.resp.filter(r=>r.correcta).length;
   guardar({estado:'en-curso', preguntaActual:E.act,
     respuestas:E.resp, correctas, fin:null});
@@ -346,17 +625,20 @@ function siguiente(){
 
 function terminar(){
   const correctas = E.resp.filter(r=>r.correcta).length;
-  const aprobado = correctas >= 6;
+  const aprobado = correctas >= UMBRAL;
   const fin = new Date().toISOString();
   guardar({estado: aprobado?'aprobado':'reprobado',
     preguntaActual:PQ.length, respuestas:E.resp, correctas, fin});
-  // Render resultado
+  
+  // Limpiar de conectados
+  if(E.sessionId) refConectados.child(E.sessionId).remove();
+  
   document.getElementById('res-ico').textContent = aprobado?'🎉':'📚';
   document.getElementById('res-est').textContent = aprobado?'¡APROBADO!':'NO APROBADO';
   document.getElementById('res-pts').textContent = `${correctas} / ${PQ.length}`;
   document.getElementById('res-msg').textContent = aprobado
     ?'Excelente. Conoces bien tus funciones y deberes.'
-    :'Necesitas repasar el material. Mínimo 6 correctas para aprobar.';
+    :`Necesitas repasar el material. Mínimo ${UMBRAL} correctas para aprobar.`;
   document.getElementById('res-box').style.background = aprobado?'#1A6B2F':'#C00000';
   const det = document.getElementById('det');
   det.innerHTML = '';
@@ -378,7 +660,7 @@ function terminar(){
 }
 
 function reiniciar(){
-  E = {nom:'',tur:'',act:0,sel:null,conf:false,resp:[],ini:null,uid:null,pantalla:'inicio'};
+  E = {nom:'',tur:'',act:0,sel:null,conf:false,resp:[],ini:null,uid:null,pantalla:'inicio',sessionId:null};
   document.getElementById('inp-nom').value = '';
   document.getElementById('inp-tur').value = '';
   document.getElementById('btn-ini').disabled = true;
@@ -445,7 +727,31 @@ function stat(n,l,c){
 function limpiarTodo(){
   if(!confirm('¿Limpiar todos los resultados?')) return;
   refAlumnos.remove();
+  refConectados.remove();
 }
+
+// ── REGISTRAR PRESENCIA AL CARGAR LA PÁGINA ────────────────────────────────────
+function actualizarPresencia(){
+  const nom = document.getElementById('inp-nom').value.trim();
+  const tur = document.getElementById('inp-tur').value;
+  if(nom && tur){
+    refConectados.child(E.sessionId).set({
+      nombre: nom,
+      turno: tur,
+      timestamp: firebase.database.ServerValue.TIMESTAMP,
+      estado: 'en-formulario'
+    });
+  }
+}
+
+window.addEventListener('load', ()=>{
+  E.sessionId = genId();
+  // Registrar presencia cuando hay nombre y turno
+  document.getElementById('inp-nom').addEventListener('input', actualizarPresencia);
+  document.getElementById('inp-tur').addEventListener('change', actualizarPresencia);
+});
+
+actualizarInfoPreguntas();
 </script>
 </body>
 </html>
